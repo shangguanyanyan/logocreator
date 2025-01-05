@@ -146,7 +146,7 @@ export async function POST(req: Request) {
 
     if (modelBlocked.success) {
       return new Response(
-        "Your Together AI account needs a credit card on file to use this app. Please add a credit card at: https://api.together.xyz/settings/billing",
+        "Your Together AI account needs to be in Build Tier 2 ($50 credit pack purchase required) to use this model. Please make a purchase at: https://api.together.xyz/settings/billing",
         {
           status: 403,
           headers: { "Content-Type": "text/plain" },
