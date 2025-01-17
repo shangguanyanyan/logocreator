@@ -17,7 +17,7 @@ export default function Header({ className }: { className: string }) {
       <div className="flex items-center justify-between bg-[#343434] px-4 py-2 md:mt-4">
         {/* Logo - left on mobile, centered on larger screens */}
         <div className="flex flex-grow justify-start xl:justify-center">
-          <Link href="https://dub.sh/together-ai" className="flex items-center">
+          <Link href="https://togetherai.link/" className="flex items-center">
             <Image
               src="together-ai-logo1.svg"
               alt="together.ai"

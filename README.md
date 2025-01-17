@@ -9,7 +9,7 @@
 
 ## Tech stack
 
-- [Flux Pro 1.1](https://dub.sh/flux-playground) on [Together AI](https://dub.sh/together-ai) for logo generation
+- [Flux Pro 1.1](https://togetherai.link/flux-playground) on [Together AI](https://togetherai.link/) for logo generation
 - [Next.js](https://nextjs.org/) with TypeScript for the app framework
 - [Shadcn](https://ui.shadcn.com/) for UI components & [Tailwind](https://tailwindcss.com/) for styling
 - [Upstash Redis](https://upstash.com/) for rate limiting
