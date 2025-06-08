@@ -2,7 +2,7 @@ import { clerkClient, currentUser } from "@clerk/nextjs/server";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 import dedent from "dedent";
-import Together from "together-ai";
+import Replicate from "replicate";
 import { z } from "zod";
 
 let ratelimit: Ratelimit | undefined;
@@ -19,23 +19,13 @@ export async function POST(req: Request) {
     .object({
       userAPIKey: z.string().optional(),
       companyName: z.string(),
-      // selectedLayout: z.string(),
+      selectedLayout: z.string(),
       selectedStyle: z.string(),
       selectedPrimaryColor: z.string(),
       selectedBackgroundColor: z.string(),
       additionalInfo: z.string().optional(),
     })
     .parse(json);
-
-  // Add observability if a Helicone key is specified, otherwise skip
-  const options: ConstructorParameters<typeof Together>[0] = {};
-  if (process.env.HELICONE_API_KEY) {
-    options.baseURL = "https://together.helicone.ai/v1";
-    options.defaultHeaders = {
-      "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
-      "Helicone-Property-LOGOBYOK": data.userAPIKey ? "true" : "false",
-    };
-  }
 
   // Add rate limiting if Upstash API keys are set & no BYOK, otherwise skip
   if (process.env.UPSTASH_REDIS_REST_URL && !data.userAPIKey) {
@@ -48,10 +38,11 @@ export async function POST(req: Request) {
     });
   }
 
-  const client = new Together(options);
+  const client = new Replicate({
+    auth: data.userAPIKey || process.env.REPLICATE_API_TOKEN,
+  });
 
   if (data.userAPIKey) {
-    client.apiKey = data.userAPIKey;
     (await clerkClient()).users.updateUserMetadata(user.id, {
       unsafeMetadata: {
         remaining: "BYOK",
@@ -70,7 +61,7 @@ export async function POST(req: Request) {
 
     if (!success) {
       return new Response(
-        "You've used up all your credits. Enter your own Together API Key to generate more logos.",
+        "You've used up all your credits. Enter your own Replicate API Key to generate more logos.",
         {
           status: 429,
           headers: { "Content-Type": "text/plain" },
@@ -106,26 +97,52 @@ export async function POST(req: Request) {
     Minimal: minimalStyle,
   };
 
+  const layoutLookup: Record<string, string> = {
+    Solo: "single centered logo with the company name integrated within or positioned elegantly below the logo symbol",
+    Side: "horizontal layout with the logo symbol on the left side and company name text on the right side", 
+    Stack: "vertical stacked layout with the logo symbol positioned above and company name text positioned below"
+  };
+
   const prompt = dedent`A single logo, high-quality, award-winning professional design, made for both digital and print media, only contains a few vector shapes, ${styleLookup[data.selectedStyle]}
 
-  Primary color is ${data.selectedPrimaryColor.toLowerCase()} and background color is ${data.selectedBackgroundColor.toLowerCase()}. The company name is ${data.companyName}, make sure to include the company name in the logo. ${data.additionalInfo ? `Additional info: ${data.additionalInfo}` : ""}`;
+Layout style: ${layoutLookup[data.selectedLayout] || layoutLookup.Solo}. Primary color is ${data.selectedPrimaryColor.toLowerCase()} and background color is ${data.selectedBackgroundColor.toLowerCase()}. The company name is ${data.companyName}, make sure to include the company name in the logo. ${data.additionalInfo ? `Additional info: ${data.additionalInfo}` : ""}`;
 
   try {
-    const response = await client.images.create({
-      prompt,
-      model: "black-forest-labs/FLUX.1.1-pro",
-      width: 768,
-      height: 768,
-      // @ts-expect-error - this is not typed in the API
-      response_format: "base64",
-    });
-    return Response.json(response.data[0], { status: 200 });
+    const output = await client.run(
+      "black-forest-labs/flux-1.1-pro",
+      {
+        input: {
+          prompt,
+          width: 768,
+          height: 768,
+          output_format: "webp",
+          output_quality: 80,
+        }
+      }
+    );
+
+    // Convert the output URL to base64 for consistency with original API
+    const imageUrl = Array.isArray(output) ? (output[0] as any).url() : (output as any).url();
+    const response = await fetch(imageUrl);
+    
+    if (!response.ok) {
+      throw new Error("Failed to download generated image");
+    }
+    
+    const arrayBuffer = await response.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
+    
+    // Convert to base64 without using Node.js Buffer (Edge Runtime compatible)
+    const base64 = btoa(String.fromCharCode.apply(null, Array.from(uint8Array)));
+    
+    return Response.json({ 
+      b64_json: base64,
+      revised_prompt: prompt 
+    }, { status: 200 });
   } catch (error) {
     const invalidApiKey = z
       .object({
-        error: z.object({
-          error: z.object({ code: z.literal("invalid_api_key") }),
-        }),
+        detail: z.string().includes("Invalid API token"),
       })
       .safeParse(error);
 
@@ -136,17 +153,15 @@ export async function POST(req: Request) {
       });
     }
 
-    const modelBlocked = z
+    const insufficientCredits = z
       .object({
-        error: z.object({
-          error: z.object({ type: z.literal("request_blocked") }),
-        }),
+        detail: z.string().includes("insufficient credits"),
       })
       .safeParse(error);
 
-    if (modelBlocked.success) {
+    if (insufficientCredits.success) {
       return new Response(
-        "Your Together AI account needs to be in Build Tier 2 ($50 credit pack purchase required) to use this model. Please make a purchase at: https://api.together.xyz/settings/billing",
+        "Your Replicate account has insufficient credits. Please add credits at: https://replicate.com/account/billing",
         {
           status: 403,
           headers: { "Content-Type": "text/plain" },

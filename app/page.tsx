@@ -23,12 +23,13 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import { domain } from "@/app/lib/domain";
 import InfoTooltip from "./components/InfoToolTip";
+ // Assuming you have a layouts.ts file with the layout data
 
-// const layouts = [
-//   { name: "Solo", icon: "/solo.svg" },
-//   { name: "Side", icon: "/side.svg" },
-//   { name: "Stack", icon: "/stack.svg" },
-// ];
+const layouts = [
+  { name: "Solo", icon: "/solo.svg" },
+  { name: "Side", icon: "/side.svg" },
+  { name: "Stack", icon: "/stack.svg" },
+];
 
 const logoStyles = [
   { name: "Tech", icon: "/tech.svg" },
@@ -60,7 +61,7 @@ export default function Page() {
     return "";
   });
   const [companyName, setCompanyName] = useState("");
-  // const [selectedLayout, setSelectedLayout] = useState(layouts[0].name);
+  const [selectedLayout, setSelectedLayout] = useState(layouts[0].name);
   const [selectedStyle, setSelectedStyle] = useState(logoStyles[0].name);
   const [selectedPrimaryColor, setSelectedPrimaryColor] = useState(
     primaryColors[0].name,
@@ -92,7 +93,7 @@ export default function Page() {
       body: JSON.stringify({
         userAPIKey,
         companyName,
-        // selectedLayout,
+        selectedLayout,
         selectedStyle,
         selectedPrimaryColor,
         selectedBackgroundColor,
@@ -138,25 +139,6 @@ export default function Page() {
             <fieldset className="flex grow flex-col" disabled={!isSignedIn}>
               <div className="flex-grow overflow-y-auto">
                 <div className="px-8 pb-0 pt-4 md:px-6 md:pt-6">
-                  {/* API Key Section */}
-                  <div className="mb-6">
-                    <label
-                      htmlFor="api-key"
-                      className="mb-2 block text-xs font-bold uppercase text-[#F3F3F3]"
-                    >
-                      TOGETHER API KEY
-                      <span className="ml-2 text-xs uppercase text-[#6F6F6F]">
-                        [OPTIONAL]
-                      </span>
-                    </label>
-                    <Input
-                      value={userAPIKey}
-                      onChange={handleAPIKeyChange}
-                      placeholder="API Key"
-                      type="password"
-                    />
-                  </div>
-                  <div className="-mx-6 mb-6 h-px w-[calc(100%+48px)] bg-[#343434]"></div>
                   <div className="mb-6">
                     <label
                       htmlFor="company-name"
@@ -172,7 +154,7 @@ export default function Page() {
                     />
                   </div>
                   {/* Layout Section */}
-                  {/* <div className="mb-6">
+                  <div className="mb-6">
                     <label className="mb-2 flex items-center text-xs font-bold uppercase text-[#6F6F6F]">
                       Layout
                       <InfoTooltip content="Select a layout for your logo" />
@@ -199,7 +181,7 @@ export default function Page() {
                         </RadioGroup.Item>
                       ))}
                     </RadioGroup.Root>
-                  </div> */}
+                  </div>
                   {/* Logo Style Section */}
                   <div className="mb-6">
                     <label className="mb-2 flex items-center text-xs font-bold uppercase text-[#6F6F6F]">
