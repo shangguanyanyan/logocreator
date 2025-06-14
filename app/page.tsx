@@ -16,6 +16,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { SignInButton, useUser } from "@clerk/nextjs";
 import * as RadioGroup from "@radix-ui/react-radio-group";
+
 import { DownloadIcon, RefreshCwIcon } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
@@ -70,6 +71,7 @@ export default function Page() {
     backgroundColors[0].name,
   );
   const [additionalInfo, setAdditionalInfo] = useState("");
+  const [includeCompanyName, setIncludeCompanyName] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [generatedImage, setGeneratedImage] = useState("");
 
@@ -98,6 +100,7 @@ export default function Page() {
         selectedPrimaryColor,
         selectedBackgroundColor,
         additionalInfo,
+        includeCompanyName,
       }),
     });
 
@@ -152,9 +155,24 @@ export default function Page() {
                       placeholder="Sam's Burgers"
                       required
                     />
+                    <div className="mt-3 flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="include-company-name"
+                        checked={includeCompanyName}
+                        onChange={(e) => setIncludeCompanyName(e.target.checked)}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <label
+                        htmlFor="include-company-name"
+                        className="text-xs text-[#F3F3F3] cursor-pointer"
+                      >
+                        Include company name in logo
+                      </label>
+                    </div>
                   </div>
                   {/* Layout Section */}
-                  <div className="mb-6">
+                  {/* <div className="mb-6">
                     <label className="mb-2 flex items-center text-xs font-bold uppercase text-[#6F6F6F]">
                       Layout
                       <InfoTooltip content="Select a layout for your logo" />
@@ -181,7 +199,7 @@ export default function Page() {
                         </RadioGroup.Item>
                       ))}
                     </RadioGroup.Root>
-                  </div>
+                  </div> */}
                   {/* Logo Style Section */}
                   <div className="mb-6">
                     <label className="mb-2 flex items-center text-xs font-bold uppercase text-[#6F6F6F]">

@@ -24,6 +24,7 @@ export async function POST(req: Request) {
       selectedPrimaryColor: z.string(),
       selectedBackgroundColor: z.string(),
       additionalInfo: z.string().optional(),
+      includeCompanyName: z.boolean().optional().default(true),
     })
     .parse(json);
 
@@ -97,22 +98,19 @@ export async function POST(req: Request) {
     Minimal: minimalStyle,
   };
 
-  const layoutLookup: Record<string, string> = {
-    Solo: "single centered logo with the company name integrated within or positioned elegantly below the logo symbol",
-    Side: "horizontal layout with the logo symbol on the left side and company name text on the right side", 
-    Stack: "vertical stacked layout with the logo symbol positioned above and company name text positioned below"
-  };
-
   const prompt = dedent`A single logo, high-quality, award-winning professional design, made for both digital and print media, only contains a few vector shapes, ${styleLookup[data.selectedStyle]}
 
-Layout style: ${layoutLookup[data.selectedLayout] || layoutLookup.Solo}. Primary color is ${data.selectedPrimaryColor.toLowerCase()} and background color is ${data.selectedBackgroundColor.toLowerCase()}. The company name is ${data.companyName}, make sure to include the company name in the logo. ${data.additionalInfo ? `Additional info: ${data.additionalInfo}` : ""}`;
+Layout style: Primary color is ${data.selectedPrimaryColor.toLowerCase()} and background color is ${data.selectedBackgroundColor.toLowerCase()}. ${data.includeCompanyName ? `The company name is ${data.companyName}, make sure to include the company name in the logo.` : `This is for ${data.companyName} company, but do not include any text or company name in the logo design.`} ${data.additionalInfo ? `Additional info: ${data.additionalInfo}` : ""}`;
 
+  const negative_prompt = "text, letters, words, numbers, watermark, signature, typography";
+  console.log(prompt);
   try {
     const output = await client.run(
       "black-forest-labs/flux-1.1-pro",
       {
         input: {
           prompt,
+          negative_prompt: data.includeCompanyName ? "" : negative_prompt,
           width: 768,
           height: 768,
           output_format: "webp",
